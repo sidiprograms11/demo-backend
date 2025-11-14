@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  cv_db:
+    image: postgres:16
+    container_name: cv_db
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    ports:
+      - "5433:5432"                # on expose la DB sur 5433 côté hôte
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d mydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  cv_backend:
+    build: .
+    container_name: cv_backend
+    depends_on:
+      cv_db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"               # <— indispensable pour accéder à l’API
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://cv_db:5432/mydb
+      DB_USERNAME: myuser
+      DB_PASSWORD: mypassword
+      JWT_SECRET: une-grande-cle-ultra-secrete-256bits
+      CORS_ORIGINS: http://localhost:4200,http://localhost:50392
