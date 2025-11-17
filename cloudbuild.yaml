@@ -1,0 +1,37 @@
+# cloudbuild.yaml (BACKEND - Spring Boot)
+
+steps:
+  # 1) Build de l'image Docker du backend
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build backend image'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/app-repo/cv-backend:$SHORT_SHA'
+      - '.'
+
+  # 2) Push de l'image vers Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push backend image'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/app-repo/cv-backend:$SHORT_SHA'
+
+  # 3) Déploiement sur Cloud Run (cv-backend)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'Deploy to Cloud Run (backend)'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'cv-backend'
+      - '--image'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/app-repo/cv-backend:$SHORT_SHA'
+      - '--region'
+      - 'europe-west1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/app-repo/cv-backend:$SHORT_SHA'
